@@ -9,8 +9,13 @@ import numpy as np
 2、创建Estimator对象（1）先创建列FeatureColumn对象。（2）创建Estimator对象
 3、使用Estimator对象调用train(),evaluate()等方法。
 '''
+_SAMPLE_COUNT = 200
+_FEATURE_COUNT = 10000
+_HIDDEN_UNIT = [100, 75, 50, 25]
 
-def my_input_fn(data_file='../../../data/h50.txt', num_epochs=10, shuffle=1, batch_size=1):
+def my_input_fn(data_file='/Users/ljhn1829/99_Project/lujinhong-commons-python3/lujinhong/data/h50.txt', num_epochs=32,
+                shuffle=1, batch_size=10):
+    print("building dataset....")
     assert tf.gfile.Exists(data_file), (
         '%s not found. Please make sure you have run data_download.py and '
         'set the --data_dir argument to the correct path.' % data_file)
@@ -18,7 +23,7 @@ def my_input_fn(data_file='../../../data/h50.txt', num_epochs=10, shuffle=1, bat
     f = open(data_file)
     line_count = 0
     labels = []
-    features = np.zeros((10,1000))
+    features = np.zeros((_SAMPLE_COUNT, _FEATURE_COUNT))
     for line in f:
         if ',,' in line:
             feature_string = line.split(',,')[0]
@@ -26,30 +31,34 @@ def my_input_fn(data_file='../../../data/h50.txt', num_epochs=10, shuffle=1, bat
             labels.append(int(label))
             feature_array = feature_string.split(' ')
             for f in feature_array:
-                if (':' in f and '_' not in f):
+                if (':' in f and '_' not in f and int(f.split(':')[0]) < _FEATURE_COUNT):
                     index = int(f.split(':')[0])
-                    features[line_count,index] = 1
+                    features[line_count, index] = 1
         line_count += 1
     features_dict = {}
-    for i in range(1000):
-        features_dict[str(i)] = features[:,i]
-    print(features_dict['678'])
+    for i in range(_FEATURE_COUNT):
+        features_dict[str(i)] = features[:, i]
+    print(features_dict['405'])
     dataset = tf.data.Dataset.from_tensor_slices((features_dict, labels))
+    print('Finish buiding dataset')
 
     if shuffle:
-        dataset = dataset.shuffle(1000)
+        dataset = dataset.shuffle(_SAMPLE_COUNT)
     dataset = dataset.repeat(num_epochs)
     dataset = dataset.batch(batch_size)
+    print('Dataset shuffle/repeat/batch')
     return dataset
+
 
 def build_model_columns():
     wide_columns = []
     deep_columns = []
-    for i in range(1000):
+    for i in range(_FEATURE_COUNT):
         c = tf.feature_column.numeric_column(str(i))
         wide_columns.append(c)
         deep_columns.append(c)
-    return wide_columns,deep_columns
+    return wide_columns, deep_columns
+
 
 def build_estimator(model_dir):
     wide_columns, deep_columns = build_model_columns()
@@ -57,7 +66,7 @@ def build_estimator(model_dir):
         model_dir=model_dir,
         linear_feature_columns=wide_columns,
         dnn_feature_columns=deep_columns,
-        dnn_hidden_units=[100, 75, 50, 25])
+        dnn_hidden_units=_HIDDEN_UNIT)
 
 
 def main():
@@ -70,8 +79,6 @@ def main():
     eval = model.evaluate(my_input_fn)
     print(eval)
 
+
 if __name__ == '__main__':
     main()
-
-
-
