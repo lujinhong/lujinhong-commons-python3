@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 '''
+基本功能，根据h50优化的见wide_deep_h50_dense_tensor.py
 读取文本数据，使用numpy数组构建dataset对象，然后训练模型。
 基本思路：
 1、创建Dataset对象：（1）创建一个[样本数，特征数]的二维数组，并初始化为0（2）根据样本数据，将二维数组相应的数据置位value（3）创建一个dict，key为列的名称，value为所有样本这列的值

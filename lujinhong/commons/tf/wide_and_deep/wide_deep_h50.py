@@ -2,6 +2,9 @@ import tensorflow as tf
 import numpy as np
 
 
+'''
+使用SparseTensor训练wide & deep
+'''
 def my_input_fn(data_file='../../data/h50.txt', num_epochs=10, shuffle=1, batch_size=1):
     assert tf.gfile.Exists(data_file), (
         '%s not found. Please make sure you have run data_download.py and '
