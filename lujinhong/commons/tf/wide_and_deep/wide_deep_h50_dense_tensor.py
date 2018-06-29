@@ -3,6 +3,7 @@ import numpy as np
 import os
 import sys
 import logging
+from itertools import islice
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 def _set_time_logging():
@@ -21,7 +22,8 @@ def _set_time_logging():
 2、创建Estimator对象（1）先创建列FeatureColumn对象。（2）创建Estimator对象
 3、使用Estimator对象调用train(),evaluate()等方法。
 '''
-_SAMPLE_COUNT = 10000
+_BATCH_SAMPLE_COUNT = 100 #每次训练的样本数量
+_TOTAL_SAMPLE_COUNT = 218000 #样本的总量
 _FEATURE_COUNT = 200
 # _HIDDEN_UNIT = [100, 75, 50, 25]
 _HIDDEN_UNIT = [75, 50, 25]
@@ -32,6 +34,7 @@ _MODEL_DIR = DIR_PREFIX + '/Downloads/wd/'
 ID_MAPPINT_FILE = DIR_PREFIX + '/lujinhong-commons-python3/lujinhong/data/id.txt'
 _DEVICE_ = '/job:localhost/replica:0/task:0/device:GPU:0'
 id_dict = {}
+begin = 0
 
 #若直接使用标签id，则最大的标签id可以到一百多万，也就是我们要构建一个一百多万维的数组。
 #而每个标签都对应有一个从1开始自增的id，然后用这个id来替代标签id。
@@ -54,9 +57,9 @@ def my_input_fn(data_file=_TRAINING_DATA_FILE, num_epochs=1,
     f = open(data_file)
     line_count = 0
     labels = []
-    features = np.zeros((_SAMPLE_COUNT, _FEATURE_COUNT))
-    for line in f:
-        if ',' in line:
+    features = np.zeros((_BATCH_SAMPLE_COUNT, _FEATURE_COUNT))
+    for line in islice(f, begin, None):
+        if line_count < _BATCH_SAMPLE_COUNT and ',' in line:
             feature_string = line.split(',')[0]
             label = line.split(',')[1]
             labels.append(int(label))
@@ -74,7 +77,7 @@ def my_input_fn(data_file=_TRAINING_DATA_FILE, num_epochs=1,
     print('Finish buiding dataset')
 
     if shuffle:
-        dataset = dataset.shuffle(_SAMPLE_COUNT)
+        dataset = dataset.shuffle(_BATCH_SAMPLE_COUNT)
     dataset = dataset.repeat(num_epochs)
     dataset = dataset.batch(batch_size)
     print('Dataset shuffle/repeat/batch')
@@ -101,7 +104,6 @@ def build_estimator(model_dir):
 
 
 def main():
-    load_dict()
     with tf.device(_DEVICE_):
         # dataset = my_input_fn('../../data/h50.txt', 40, 1, 1)
         model = build_estimator(_MODEL_DIR)
@@ -115,5 +117,9 @@ def main():
 
 if __name__ == '__main__':
     _set_time_logging()
+    load_dict()
     tf.logging.set_verbosity(tf.logging.INFO)
-    main()
+    for i in range(0, _TOTAL_SAMPLE_COUNT-_BATCH_SAMPLE_COUNT, _BATCH_SAMPLE_COUNT):
+        print('trainng sample: ', i, ' to ', i + _BATCH_SAMPLE_COUNT)
+        begin = i
+        main()
