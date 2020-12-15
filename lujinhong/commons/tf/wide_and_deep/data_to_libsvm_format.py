@@ -19,11 +19,11 @@ def csv_format():
 
 def index_format():
     f = open(index_file,'a')
-    for i in range(1299901):
+    for i in range(1999999):
         f.write('0:' + str(i) + ' ' + str(i) + '\n')
         f.flush()
     f.close()
 
 if __name__ == '__main__':
-    csv_format()
-    #index_format()
+    # csv_format()
+    index_format()
